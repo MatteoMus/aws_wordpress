@@ -1,0 +1,273 @@
+Parameters:
+  CidrBlock28:
+    Description: 'Specify the 2nd Octet of IPv4 CIDR block for the VPC (10.XXX.0.0/16) in the range [0-255]'
+    Type: Number
+    Default: 0
+    ConstraintDescription: 'Must be in the range [0-255]'
+    MinValue: 0
+    MaxValue: 255
+
+
+################################################################
+#                        RESOURCES                             #
+################################################################
+Resources:
+
+##########################VPC##############################
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: !Sub '10.${CidrBlock28}.0.0/16'
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+########################SUBNET###################################      
+  SubnetPrivateRDS1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Sub '10.${CidrBlock28}.0.0/24'
+      VpcId: !Ref VPC
+      Tags:
+      - Key: reach
+        Value: private
+      - Key: tier
+        Value: rds  
+
+  SubnetPrivateRDS2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Sub '10.${CidrBlock28}.1.0/24'
+      VpcId: !Ref VPC
+      Tags:
+      - Key: reach
+        Value: private
+      - Key: tier
+        Value: rds  
+
+  SubnetPrivateEC21:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Sub '10.${CidrBlock28}.2.0/24'
+      VpcId: !Ref VPC
+      Tags:
+      - Key: reach
+        Value: private
+      - Key: tier
+        Value: ec2  
+
+  SubnetPrivateEC22:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Sub '10.${CidrBlock28}.3.0/24'
+      VpcId: !Ref VPC
+      Tags:
+      - Key: reach
+        Value: private
+      - Key: tier
+        Value: ec2  
+
+  SubnetPublic1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Sub '10.${CidrBlock28}.4.0/24'
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: reach
+        Value: public
+      - Key: tier
+        Value: dmz  
+
+  SubnetPublic2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Sub '10.${CidrBlock28}.5.0/24'
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: reach
+        Value: public        
+      - Key: tier
+        Value: dmz  
+
+######################GATEWAY################################
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '10.${CidrBlock28}.0.0/16'
+      - Key: Tier
+        Value: dmz  
+        
+  VPCGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+      
+  NATGateway1:
+    DependsOn: VPC
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt [NATEIP1,AllocationId]      
+      SubnetId: !Ref SubnetPublic1
+      Tags:
+      - Key: Name
+        Value: !Join
+                 - '_'
+                 - - 'NGW'
+                   - !Select [0, !GetAZs '']
+      - Key: Tier
+        Value: dmz             
+                   
+  NATGateway2:
+    DependsOn: VPC
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt [NATEIP2,AllocationId]      
+      SubnetId: !Ref SubnetPublic2
+      Tags:
+      - Key: Name
+        Value: !Join
+                 - '_'
+                 - - 'NGW'
+                   - !Select [1, !GetAZs ''] 
+      - Key: Tier
+        Value: dmz                    
+                         
+
+######################EIP######################################## 
+  NATEIP1:
+    DependsOn: VPCGatewayAttachment
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc  
+      
+  NATEIP2:
+    DependsOn: VPCGatewayAttachment
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc  
+      
+################ROUTE TABLE############################
+  RouteTablePublic:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: public
+
+  RouteTablePrivate1:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: private1
+        
+  RouteTablePrivate2:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: private2        
+        
+  RouteTableAssociationPublic1:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPublic1
+      RouteTableId: !Ref RouteTablePublic
+      
+  RouteTableAssociationPublic2:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPublic2
+      RouteTableId: !Ref RouteTablePublic      
+      
+  RouteTableAssociationPrivateRDS1:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPrivateRDS1
+      RouteTableId: !Ref RouteTablePrivate1
+
+  RouteTableAssociationPrivateRDS2:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPrivateRDS2
+      RouteTableId: !Ref RouteTablePrivate2     
+
+  RouteTableAssociationPrivateEC21:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPrivateEC21
+      RouteTableId: !Ref RouteTablePrivate1     
+      
+  RouteTableAssociationPrivateEC22:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref SubnetPrivateEC22
+      RouteTableId: !Ref RouteTablePrivate2  
+
+  RouteTablePublicInternetRoute:
+    Type: 'AWS::EC2::Route'
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTablePublic
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway      
+      
+  RouteTablePrivate1NAT1Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway1
+
+  RouteTablePrivate2NAT2Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTablePrivate2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway2      
+
+#######################DEFAULT SECURITY GROUP####################################
+  DefaultSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Default security group for this vpc
+      VpcId: !Ref VPC
+
+
+################################################################
+#                        OUTPUT                                #
+################################################################
+Outputs:
+
+  VPCID:
+    Description: 'VPC'
+    Value: !Ref VPC
+    
+  SubnetsPublic:
+    Description: 'Subnets public'
+    Value: !Join [',', [!Ref SubnetPublic1, !Ref SubnetPublic2]]
+      
+  SubnetsPrivateEC2:
+    Description: 'Subnets private EC2'
+    Value: !Join [',', [!Ref SubnetPrivateEC21, !Ref SubnetPrivateEC22]]
+  
+  SubnetsPrivateRDS:
+    Description: 'Subnets private RDS'
+    Value: !Join [',', [!Ref SubnetPrivateRDS1, !Ref SubnetPrivateRDS2]] 
+    
+  DefaultSecurityGroup:
+    Description: Default security group for this vpc
+    Value: !Ref DefaultSecurityGroup    

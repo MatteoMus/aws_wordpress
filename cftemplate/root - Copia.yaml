@@ -1,0 +1,113 @@
+Parameters:
+  
+  VPCID:
+    Type: String
+    Default: vpc-08d7d400b2d32898e
+    
+####################NetTier3AZ2#####################
+  CidrBlock28:
+    Description: 'Specify the 2nd Octet of IPv4 CIDR block for the VPC (10.XXX.0.0/16) in the range [0-255]'
+    Type: Number
+    Default: 0
+    ConstraintDescription: 'Must be in the range [0-255]'
+    MinValue: 0
+    MaxValue: 255
+
+####################BEANSTALK###################
+  PlatformType:
+    Type: String  
+    Default: "64bit Amazon Linux 2 v3.5.3 running PHP 8.1"
+  
+  InstanceSubnets:
+    Type: String
+    Default: "subnet-0ff708f30849efeb6,subnet-03a50160ad7497ef6"
+    
+  ELBSubnets:
+    Type: String
+    Default: "subnet-0438fd677c6cf836c,subnet-04794fee7f94af75c"  
+    
+  AutoscalingGroupMin:
+    Type: String
+    Default: '1'
+    
+  AutoscalingGroupMax:
+    Type: String
+    Default: '2'
+
+  InstanceTypes:
+    Type: String
+    Default: 't2.micro'  
+
+  EC2SecurityGroups:
+    Type: String
+    Default: 'elasticbeanstalk-default'
+    
+######################RDS#############################
+
+  DBUsername:
+    Type: String
+    Default: admin
+  
+  DBName:
+    Type: String
+    Default: ebdb
+    
+  DBEngine:
+    Type: String
+    Default: aurora-mysql
+    
+  DBEngineVersion:
+    Type: String
+    Default: 8.0.mysql_aurora.3.02.0  
+    
+
+    
+  DBPort:
+    Type: Number
+    Default: 3306
+
+  ServerlessMinCapacity:
+    Type: Number
+    Default: 0.5
+
+  ServerlessMaxCapacity:
+    Type: Number
+    Default: 1    
+    
+################################################################
+#                        RESOURCES                             #
+################################################################
+Resources:
+
+####################NetTier3AZ2#####################  
+  NetTier3AZ2STACK:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/net-3tier-2az.yaml
+      TimeoutInMinutes: 20
+      Parameters:
+        CidrBlock28: !Ref CidrBlock28
+
+####################BEANSTALK###################
+  BeanstalkSTACK:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/beanstalk.yaml
+      TimeoutInMinutes: 20
+      Parameters:
+        PlatformType: !Ref PlatformType
+        VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID  
+        InstanceSubnets: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPrivateEC2
+        ELBSubnets: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPublic
+
+###################RDS############################
+
+  RDSSTACK:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/rds-aurora-serverless.yaml
+      TimeoutInMinutes: 20
+      Parameters:
+        VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID
+        RDSSubnets: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPrivateRDS
+        

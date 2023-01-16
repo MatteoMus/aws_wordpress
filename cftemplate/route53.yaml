@@ -1,0 +1,60 @@
+Parameters:
+    
+  HostedZoneId:
+    Type: String
+    #Default: Z0633616EJKZKL17EKP7
+    Default: ""
+    
+  BeanstalkHostedZoneId:
+    Type: String  
+    #Default: Z1FRNW7UH4DEZJ 
+    Default: ""
+    
+  Domain:
+    Type: String
+    #Default: matteomus.click
+    Default: ""
+
+  SubDomain:
+    Type: String
+    Default: www
+
+  BeanstalkDNS:
+    Type: String
+    #Default: wordp-Envi-bbOm1FoSQjzM.eba-rffypkdg.eu-central-1.elasticbeanstalk.com 
+    
+  EvaluateTargetHealth:
+    Type: String
+    AllowedValues:
+      - true
+      - false
+    Default: false
+
+################################################################
+#                        CONDITIONS                            #
+################################################################
+Conditions:
+  
+  CreateDNSRecord: !And
+    - !Not [!Equals [!Ref HostedZoneId, '']]
+    - !Not [!Equals [!Ref BeanstalkHostedZoneId, '']]
+    - !Not [!Equals [!Ref Domain, '']]
+
+################################################################
+#                        RESOURCES                             #
+################################################################
+Resources:     
+
+  DNSRecord:
+    Condition: CreateDNSRecord
+    Type: 'AWS::Route53::RecordSetGroup'
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+        - Name: !Join [".",[!Ref SubDomain, !Ref Domain]]
+          Type: A
+          AliasTarget:
+            HostedZoneId: !Ref BeanstalkHostedZoneId
+            DNSName: !Ref BeanstalkDNS
+            EvaluateTargetHealth: !Ref EvaluateTargetHealth
+           

@@ -1,0 +1,100 @@
+Parameters:
+  EFSVolumeName:
+    Type: String
+    Default: EB_EFS_Volume
+
+  VPCID:
+    Type: String  
+    
+  SubnetsEC2:
+    Type: CommaDelimitedList
+    
+  EFSPort:
+    Type: Number
+    Default: 2049    
+
+################################################################
+#                        RESOURCES                             #
+################################################################
+Resources:
+
+####################################EFS###############################  
+  FileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value: !Ref EFSVolumeName
+              
+  MountTarget1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystem
+      SecurityGroups: [!Ref EFSEC2SecurityGroup]
+      SubnetId: !Select [0, !Ref SubnetsEC2]
+  
+  MountTarget2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystem
+      SecurityGroups: [!Ref EFSEC2SecurityGroup]
+      SubnetId: !Select [1, !Ref SubnetsEC2]      
+
+####################################SECURITY GROUP###########################
+  EC2EFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: !Ref VPCID
+      GroupName: EC2-EFS
+        
+  EC2EFSEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EC2EFSSecurityGroup        
+      IpProtocol: tcp
+      FromPort: !Ref EFSPort
+      ToPort: !Ref EFSPort
+      DestinationSecurityGroupId: !Ref EFSEC2SecurityGroup
+      Description: 'On EC2 to EFS'
+
+  EFSEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: !Ref VPCID
+      GroupName: EFS-EC2
+        
+  EFSEC2Ingress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref EFSEC2SecurityGroup        
+      IpProtocol: tcp
+      FromPort: !Ref EFSPort
+      ToPort: !Ref EFSPort
+      SourceSecurityGroupId: !Ref EC2EFSSecurityGroup
+      Description: 'On EFS from EC2'
+
+  EFSEC2Egress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EFSEC2SecurityGroup        
+      IpProtocol: tcp
+      FromPort: !Ref EFSPort
+      ToPort: !Ref EFSPort
+      CidrIp: '0.0.0.0/0'
+      Description: 'On EFS to any'      
+
+################################################################
+#                        OUTPUT                                #
+################################################################      
+Outputs:
+  
+  FileSystem:
+    Description: EFS filesystem ID
+    Value: !Ref FileSystem
+      
+  EC2EFSSecurityGroup:
+    Description: security group for EC2-EFS
+    Value: !Ref EC2EFSSecurityGroup
+    

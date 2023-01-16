@@ -1,0 +1,147 @@
+Parameters:
+  VPCID:
+    Type: String    
+
+  DBUsername:
+    Type: String
+    Default: admin
+  
+  DBName:
+    Type: String
+    Default: ebdb
+    
+  DBEngine:
+    Type: String
+    Default: aurora-mysql
+    
+  DBEngineVersion:
+    Type: String
+    Default: 8.0.mysql_aurora.3.02.0  
+    
+  RDSSubnets:
+    Type: CommaDelimitedList
+    
+  DBPort:
+    Type: Number
+    Default: 3306
+
+  ServerlessMinCapacity:
+    Type: Number
+    Default: 0.5
+
+  ServerlessMaxCapacity:
+    Type: Number
+    Default: 1    
+
+################################################################
+#                        RESOURCES                             #
+################################################################
+Resources:
+
+######################AURORA###################################
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: rds private subnets
+      #SubnetIds: 
+      #  - subnet-09d239f06fa557c44
+      #  - subnet-0cb1778461c9c38b8
+      SubnetIds: !Ref RDSSubnets
+      
+  AuroraDBCluster:
+    Type: AWS::RDS::DBCluster
+    DeletionPolicy: Delete
+    Properties:
+      Engine: !Ref DBEngine
+      EngineVersion: !Ref DBEngineVersion
+      DatabaseName: !Ref DBName
+      Port: !Ref DBPort
+      MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref AuroraMasterSecret, ':SecretString:username}}' ]]
+      MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref AuroraMasterSecret, ':SecretString:password}}' ]]
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      ServerlessV2ScalingConfiguration: 
+        MinCapacity: !Ref ServerlessMinCapacity
+        MaxCapacity: !Ref ServerlessMaxCapacity
+      VpcSecurityGroupIds:
+      - !Ref RDSEC2SecurityGroup
+        
+  DBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref AuroraDBCluster
+      DBInstanceClass: db.serverless
+      Engine: !Ref DBEngine
+      
+  DBInstance2:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref AuroraDBCluster
+      DBInstanceClass: db.serverless
+      Engine: !Ref DBEngine
+      
+######################SECRET MANAGER###############################    
+  AuroraMasterSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: wordpress-master
+      Description: !Join ['', ['Aurora PostgreSQL Master User Secret ', 'for CloudFormation Stack ', !Ref 'AWS::StackName']]
+      GenerateSecretString:
+        SecretStringTemplate: !Join ['', ['{"username": "', !Ref DBUsername, '"}']]
+        GenerateStringKey: "password"
+        ExcludeCharacters: '"@/\'
+        PasswordLength: 16
+
+  SecretAuroraClusterAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref AuroraMasterSecret
+      TargetId: !Ref AuroraDBCluster
+      TargetType: AWS::RDS::DBCluster
+
+###################SECURITY GROUP##################################
+  EC2RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: !Ref VPCID
+      GroupName: EC2-RDS
+        
+  RDSEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref 'AWS::StackName'
+      VpcId: !Ref VPCID
+      GroupName: RDS-EC2
+
+  EC2RDSEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref EC2RDSSecurityGroup        
+      IpProtocol: tcp
+      FromPort: !Ref DBPort
+      ToPort: !Ref DBPort
+      DestinationSecurityGroupId: !Ref RDSEC2SecurityGroup
+      Description: 'On EC2 to RDS'
+      
+  RDSEC2Ingress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref RDSEC2SecurityGroup       
+      IpProtocol: tcp
+      FromPort: !Ref DBPort
+      ToPort: !Ref DBPort
+      SourceSecurityGroupId: !Ref EC2RDSSecurityGroup
+      Description: 'On RDS from EC2'
+      
+################################################################
+#                        OUTPUT                                #
+################################################################
+Outputs:
+
+  EC2RDSSecurityGroup:
+    Description: 'EC2 to RDS SG'
+    Value: !Ref EC2RDSSecurityGroup
+     
+  AuroraMasterSecret:
+    Description: 'Secret manager with rds credentials'  
+    Value: !Ref AuroraMasterSecret

@@ -1,0 +1,81 @@
+Parameters:
+    
+####################NetTier3AZ2#####################
+  CidrBlock28:
+    Description: 'Specify the 2nd Octet of IPv4 CIDR block for the VPC (10.XXX.0.0/16) in the range [0-255]'
+    Type: Number
+    Default: 0
+    ConstraintDescription: 'Must be in the range [0-255]'
+    MinValue: 0
+    MaxValue: 255
+
+####################BEANSTALK###################
+  PlatformType:
+    Type: String  
+    Default: "64bit Amazon Linux 2 v3.5.3 running PHP 8.1"
+     
+  AutoscalingGroupMin:
+    Type: String
+    Default: '1'
+    
+  AutoscalingGroupMax:
+    Type: String
+    Default: '2'
+
+  InstanceTypes:
+    Type: String
+    Default: 't2.micro'  
+
+    
+######################RDS#############################
+
+  DBUsername:
+    Type: String
+    Default: admin
+  
+  DBName:
+    Type: String
+    Default: ebdb
+    
+  DBEngine:
+    Type: String
+    Default: aurora-mysql
+    
+  DBEngineVersion:
+    Type: String
+    Default: 8.0.mysql_aurora.3.02.0  
+       
+  DBPort:
+    Type: Number
+    Default: 3306
+
+  ServerlessMinCapacity:
+    Type: Number
+    Default: 0.5
+
+  ServerlessMaxCapacity:
+    Type: Number
+    Default: 1    
+    
+################################################################
+#                        RESOURCES                             #
+################################################################
+Resources:
+
+####################NetTier3AZ2#####################  
+  NetTier3AZ2STACK:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/net-3tier-2az.yaml
+      Parameters:
+        CidrBlock28: !Ref CidrBlock28
+
+  EFS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/efs_test.yaml
+      Parameters:
+        InstancesSecurityGroup: !GetAtt NetTier3AZ2STACK.Outputs.DefaultSecurityGroup
+        VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID 
+        SubnetsEC2: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPrivateEC2
+        
