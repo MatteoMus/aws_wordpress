@@ -175,6 +175,10 @@ Resources:
 ################################################################
 Outputs:
 
-  BeanstalkDNS:
-    Description: 'Environment internal DNS'  
+  BeanstalkELB:
+    Description: 'ELB DNS'  
     Value: !GetAtt Environment.EndpointURL
+
+  BeanstalkID:
+    Description: 'Resource id'  
+    Value: !Ref Environment

@@ -5,23 +5,20 @@ Parameters:
     #Default: Z0633616EJKZKL17EKP7
     Default: ""
     
-  BeanstalkHostedZoneId:
+  BeanstalkELBHostedZoneId:
     Type: String  
-    #Default: Z1FRNW7UH4DEZJ 
     Default: ""
     
   Domain:
     Type: String
-    #Default: matteomus.click
     Default: ""
 
   SubDomain:
     Type: String
-    Default: www
+    Default: "www"
 
-  BeanstalkDNS:
+  BeanstalkELB:
     Type: String
-    #Default: wordp-Envi-bbOm1FoSQjzM.eba-rffypkdg.eu-central-1.elasticbeanstalk.com 
     
   EvaluateTargetHealth:
     Type: String
@@ -37,7 +34,7 @@ Conditions:
   
   CreateDNSRecord: !And
     - !Not [!Equals [!Ref HostedZoneId, '']]
-    - !Not [!Equals [!Ref BeanstalkHostedZoneId, '']]
+    - !Not [!Equals [!Ref BeanstalkELBHostedZoneId, '']]
     - !Not [!Equals [!Ref Domain, '']]
 
 ################################################################
@@ -54,7 +51,7 @@ Resources:
         - Name: !Join [".",[!Ref SubDomain, !Ref Domain]]
           Type: A
           AliasTarget:
-            HostedZoneId: !Ref BeanstalkHostedZoneId
-            DNSName: !Ref BeanstalkDNS
+            HostedZoneId: !Ref BeanstalkELBHostedZoneId
+            DNSName: !Ref BeanstalkELB
             EvaluateTargetHealth: !Ref EvaluateTargetHealth
            
