@@ -26,9 +26,9 @@ Parameters:
     Type: String
     Default: 't2.micro'
 
-  #HTTPProtocol:
-    #Type: String
-    #Default: HTTP
+  HTTPProtocol:
+    Type: String
+    Default: 'HTTP'
 
   #SSLCertificateArns:
     #Type: String
