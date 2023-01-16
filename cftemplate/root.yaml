@@ -140,16 +140,16 @@ Resources:
         SubnetsEC2: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPrivateEC2 
 
 ####################ROUTE53#########################
-  #ROUTE53STACK:
-    #Type: AWS::CloudFormation::Stack
-    #Properties:
-      #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/route53.yaml
-      #Parameters:
-        #BeanstalkELB: !GetAtt BeanstalkSTACK.Outputs.BeanstalkELB
-        #HostedZoneId: !Ref HostedZoneId
-        #BeanstalkELBHostedZoneId: !Ref BeanstalkELBHostedZoneId
-        #Domain: !Ref Domain
-        #SubDomain: !Ref SubDomain    
-        #EvaluateTargetHealth: !Ref EvaluateTargetHealth        
+  ROUTE53STACK:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/route53.yaml
+      Parameters:
+        BeanstalkELB: !GetAtt BeanstalkSTACK.Outputs.BeanstalkELB
+        HostedZoneId: !Ref HostedZoneId
+        BeanstalkELBHostedZoneId: !Ref BeanstalkELBHostedZoneId
+        Domain: !Ref Domain
+        SubDomain: !Ref SubDomain    
+        EvaluateTargetHealth: !Ref EvaluateTargetHealth        
         
         
