@@ -83,7 +83,7 @@ Parameters:
 
   SubDomain:
     Type: String
-    Default: www
+    Default: ""
     
   EvaluateTargetHealth:
     Type: String

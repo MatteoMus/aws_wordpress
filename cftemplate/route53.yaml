@@ -15,7 +15,7 @@ Parameters:
 
   SubDomain:
     Type: String
-    Default: "www"
+    Default: ""
 
   BeanstalkELB:
     Type: String
@@ -32,18 +32,38 @@ Parameters:
 ################################################################
 Conditions:
   
-  CreateDNSRecord: !And
+  CreateDNSRecordDomain: !And
     - !Not [!Equals [!Ref HostedZoneId, '']]
     - !Not [!Equals [!Ref BeanstalkELBHostedZoneId, '']]
     - !Not [!Equals [!Ref Domain, '']]
+    - !Equals [!Ref SubDomain, '']
+
+  CreateDNSRecordSubDomain: !And
+    - !Not [!Equals [!Ref HostedZoneId, '']]
+    - !Not [!Equals [!Ref BeanstalkELBHostedZoneId, '']]
+    - !Not [!Equals [!Ref Domain, '']]
+    - !Not [!Equals [!Ref SubDomain, '']]  
 
 ################################################################
 #                        RESOURCES                             #
 ################################################################
 Resources:     
 
-  DNSRecord:
-    Condition: CreateDNSRecord
+  DNSRecordDomain:
+    Condition: CreateDNSRecordDomain
+    Type: 'AWS::Route53::RecordSetGroup'
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      RecordSets:
+        - Name: !Ref Domain
+          Type: A
+          AliasTarget:
+            HostedZoneId: !Ref BeanstalkELBHostedZoneId
+            DNSName: !Ref BeanstalkELB
+            EvaluateTargetHealth: !Ref EvaluateTargetHealth
+
+  DNSRecordSubDomain:
+    Condition: CreateDNSRecordSubDomain
     Type: 'AWS::Route53::RecordSetGroup'
     Properties:
       HostedZoneId: !Ref HostedZoneId
@@ -53,5 +73,5 @@ Resources:
           AliasTarget:
             HostedZoneId: !Ref BeanstalkELBHostedZoneId
             DNSName: !Ref BeanstalkELB
-            EvaluateTargetHealth: !Ref EvaluateTargetHealth
+            EvaluateTargetHealth: !Ref EvaluateTargetHealth          
            
