@@ -34,7 +34,11 @@ Parameters:
 
   FileSystem:
     Type: String
-   
+
+  SSLCertificateArns:
+    Type: String
+    
+
 ################################################################
 #                        RESOURCES                             #
 ################################################################
@@ -47,6 +51,7 @@ Resources:
       Description: Web app
 
 #######################CONFIGURATION TEMPLATE#######################################  
+ 
   ConfigurationTemplate:
     Type: AWS::ElasticBeanstalk::ConfigurationTemplate
     Properties:
@@ -109,11 +114,15 @@ Resources:
         OptionName: Region
         Value: !Ref "AWS::Region"    
 
-      - Namespace: aws:elbv2:listener:80
+      - Namespace: aws:elbv2:listener:443
         OptionName: Protocol
-        Value: HTTP
+        Value: HTTPS  
+ 
+      - Namespace: aws:elbv2:listener:443
+        OptionName: SSLCertificateArns
+        Value: !Ref SSLCertificateArns
         
-      SolutionStackName: !Ref PlatformType
+      SolutionStackName: !Ref PlatformType    
 
 ##########################ENVIRONMENT############################  
   Environment:
