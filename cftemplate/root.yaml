@@ -179,7 +179,7 @@ Resources:
 
 ####################ROUTE53#########################
   ROUTE53HTTPSTACK:
-    Condition: HTTPSDisabled
+    #Condition: HTTPSDisabled
     Type: AWS::CloudFormation::Stack
     Properties:
       #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/route53.yaml
@@ -187,27 +187,27 @@ Resources:
         - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/route53.yaml
         - bucket_name: !Ref S3CFNAME
       Parameters:
-        BeanstalkELB: !GetAtt BeanstalkHTTPSTACK.Outputs.BeanstalkELB
+        BeanstalkELB: !If [HTTPSDisabled, !GetAtt BeanstalkHTTPSTACK.Outputs.BeanstalkELB,!GetAtt BeanstalkHTTPSSTACK.Outputs.BeanstalkELB]
         HostedZoneId: !Ref HostedZoneId
         BeanstalkELBHostedZoneId: !Ref BeanstalkELBHostedZoneId
         Domain: !Ref Domain
         SubDomain: !Ref SubDomain    
         EvaluateTargetHealth: !Ref EvaluateTargetHealth
 
-  ROUTE53HTTPSSTACK:
-    Condition: HTTPSEnabled
-    Type: AWS::CloudFormation::Stack
-    Properties:
+  #ROUTE53HTTPSSTACK:
+    #Condition: HTTPSEnabled
+    #Type: AWS::CloudFormation::Stack
+    #Properties:
       #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/route53.yaml
-      TemplateURL: !Sub 
-        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/route53.yaml
-        - bucket_name: !Ref S3CFNAME
-      Parameters:
-        BeanstalkELB: !GetAtt BeanstalkHTTPSSTACK.Outputs.BeanstalkELB
-        HostedZoneId: !Ref HostedZoneId
-        BeanstalkELBHostedZoneId: !Ref BeanstalkELBHostedZoneId
-        Domain: !Ref Domain
-        SubDomain: !Ref SubDomain    
-        EvaluateTargetHealth: !Ref EvaluateTargetHealth              
+      #TemplateURL: !Sub 
+        #- https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/route53.yaml
+        #- bucket_name: !Ref S3CFNAME
+      #Parameters:
+        #BeanstalkELB: !GetAtt BeanstalkHTTPSSTACK.Outputs.BeanstalkELB
+        #HostedZoneId: !Ref HostedZoneId
+        #BeanstalkELBHostedZoneId: !Ref BeanstalkELBHostedZoneId
+        #Domain: !Ref Domain
+        #SubDomain: !Ref SubDomain    
+        #EvaluateTargetHealth: !Ref EvaluateTargetHealth              
         
         
