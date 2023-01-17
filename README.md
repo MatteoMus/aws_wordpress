@@ -113,6 +113,6 @@ This folder contains 2 Beanstalk config files:
 
 This folder contains a prebuild hook. The script secret_manager.sh is used to retrieve the secret manager values for the DB connection at the instance boot. It writes a secret.json file in /var/app/current.
 
-### File wp-config.php
+### 5.3 File wp-config.php
 
 This is the wordpress configuration file. It's modified to retrieve the DB credentials and informations from the file /var/app/current/sceret.json
