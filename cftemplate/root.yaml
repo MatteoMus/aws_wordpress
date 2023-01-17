@@ -1,4 +1,9 @@
 Parameters:
+
+####################NESTED STACK CF########################
+  NetTier3AZ2STACKFILE:
+    Type: String
+    Default: https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/net-3tier-2az.yaml
     
 ####################NetTier3AZ2#####################
   CidrBlock28:
