@@ -102,6 +102,8 @@ aws cloudformation create-stack --stack-name wordpress --template-body file://ro
 
 To deploy your application you can access to the AWS console and under Elatic Beanstalk you will find your environment. The interface provides an easy way to deploy your code: uploading a source bundle. You can find the instruction to prepare a source bundle [here](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/applications-sourcebundle.html).
 
+In the root path there a source_bunde.zip ready to be deployed to test the environment.
+
 Before creating the source bundle, you have to injects the following files or folders.
 
 ### 5.1 - Folder .ebextensions
