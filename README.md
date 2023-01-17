@@ -93,3 +93,26 @@ Parameters required:
 ```
 aws cloudformation create-stack --stack-name wordpress --template-body file://root.yaml --capabilities CAPABILITY_IAM --parameters ParameterKey=S3CFNAME,ParameterValue=<name of the bucket> ParameterKey=SSLCertificateArns,ParameterValue=<certificate arn> ParameterKey=HostedZoneId,ParameterValue=<hosted zone id> ParameterKey=BeanstalkELBHostedZoneId,ParameterValue=<elb zone id> ParameterKey=Domain,ParameterValue=<route53 domain> ParameterKey=SubDomain,ParameterValue=<subdomain string>
 ```
+
+## 5 - Deploy the wordpress application
+
+>You can deploy any wordpress versions that support PHP 8.1.
+
+To deploy your application you can access to the AWS console and under Elatic Beanstalk you will find your environment. The interface provides an easy way to deploy your code: uploading a source bundle. You can find the instruction to prepare a source bundle [here](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/applications-sourcebundle.html).
+
+Before creating the source bundle, you have to injects the following files or folders.
+
+### 5.1 - Folder .ebextensions
+
+This folder contains 2 Beanstalk config files:
+
+1- wordpress.config: to set some evironment variables. It's currently not used
+2- efs-mount.config: to mount the EFS on the instances. This way the files saved in wp-content/uploads are shared between the instances.
+
+### 5.2 Folder .platform
+
+This folder contains a prebuild hook. The script secret_manager.sh is used to retrieve the secret manager values for the DB connection at the instance boot. It writes a secret.json file in /var/app/current.
+
+### File wp-config.php
+
+This is the wordpress configuration file. It's modified to retrieve the DB credentials and informations from the file /var/app/current/sceret.json
