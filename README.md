@@ -48,7 +48,7 @@ Run the cloudformation command starting from root.yaml.
 This installation deploys a Beanstalk container responding on port 80 (ALB port) and without a custom DNS (no Route53)
 
 Parameters required:
-    - S3CFNAME = name of the bucket where you saved te cloudformation files
+- S3CFNAME = name of the bucket where you saved te cloudformation files
 
 ```
 aws cloudformation create-stack --stack-name wordpress --template-body file://root.yaml --capabilities CAPABILITY_IAM --parameters ParameterKey=S3CFNAME,ParameterValue=<name of the bucket>
