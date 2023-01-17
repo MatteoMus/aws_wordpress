@@ -34,3 +34,62 @@ The use of an ALB with an Autoscaling Group covering 2 AZs ensure fault tolleran
 ### 3.4 - Adaptive to average load
 
 You can define the min and max of the Autoscaling Group. 2 Cloudwatch alarms based on NetworkOut metric are implemented by Beanstalk by default. The Aurora DB is serverless, so able to adapt the size of its instances automatically.
+
+
+## 4 - Deploy the infrastructure
+
+Move to cftemplate folder. Inside there is a **root.yaml** and folder **nested**. Upload the yaml files inside the folder **nested** into a bucket S3 in a account where you are able to run cloudformation. The yaml files must reside at the root path of you bucket. In your local PC configure the AWS CLI to access this account.
+
+Run the cloudformation command starting from root.yaml.
+
+> I suggest to first run the basic installation, then update the stack with further features
+
+### 4.1 - Basic installation
+This installation deploys a Beanstalk container responding on port 80 (ALB port) and without a custom DNS (no Route53)
+
+Parameters required:
+    S3CFNAME = name of the bucket where you saved te cloudformation files
+
+'''
+aws cloudformation create-stack --stack-name wordpress --template-body file://root.yaml --capabilities CAPABILITY_IAM --parameters ParameterKey=S3CFNAME,ParameterValue=<name of the bucket>
+'''
+
+### 4.2 - HTTPS installation - self signed certificate
+This installation deploys a Beanstalk container responding on port 80 and 443 (ALB ports), without a custom DNS (no Route53) so the https certificate will be invalid
+
+Parameters required:
+    S3CFNAME = name of the bucket where you saved te cloudformation files
+    SSLCertificateArns = arn of a certificate saved in AWS Certifcate Manager
+
+'''
+aws cloudformation create-stack --stack-name wordpress --template-body file://root.yaml --capabilities CAPABILITY_IAM --parameters ParameterKey=S3CFNAME,ParameterValue=<name of the bucket> ParameterKey=SSLCertificateArns,ParameterValue=<certificate arn>
+'''
+
+### 4.3 - HTTPS installation with your domain
+This installation deploys a Beanstalk container responding on port 80 and 443 (ALB ports), with a custom DNS (Route53) resolving your ALB. So if the https certificate is associated with your domain, it will be valid. This installation requires that you have a properly configured hosted zone in Route53. An A record associated to your domain it will be defined in your hosted zone.
+
+Parameters required:
+    S3CFNAME = name of the bucket where you saved te cloudformation files
+    SSLCertificateArns = arn of a certificate saved in AWS Certifcate Manager
+    HostedZoneId = Hosted zone ID. You will find in your hosted zone details
+    BeanstalkELBHostedZoneId = ELB zone ID specific for each region. From this [link](https://docs.aws.amazon.com/general/latest/gr/elb.html) search the id corresponding to the region where you are deploying the application
+    Domain= ROUTE53 domain (no subdomain)
+
+'''
+aws cloudformation create-stack --stack-name wordpress --template-body file://root.yaml --capabilities CAPABILITY_IAM --parameters ParameterKey=S3CFNAME,ParameterValue=<name of the bucket> ParameterKey=SSLCertificateArns,ParameterValue=<certificate arn> ParameterKey=HostedZoneId,ParameterValue=<hosted zone id> ParameterKey=BeanstalkELBHostedZoneId,ParameterValue=<elb zone id> ParameterKey=Domain,ParameterValue=<route53 domain>
+'''
+
+### 4.4 - HTTPS installation with your subdomain
+This installation deploys a Beanstalk container responding on port 80 and 443 (ALB ports), with a custom DNS subdomain(Route53) resolving your ALB. So if the https certificate is associated with your domain, it will be valid. This installation requires that you have a properly configured hosted zone in Route53. An A record associated to your subdomain it will be defined in your hosted zone.
+
+Parameters required:
+    S3CFNAME = name of the bucket where you saved te cloudformation files
+    SSLCertificateArns = arn of a certificate saved in AWS Certifcate Manager
+    HostedZoneId = Hosted zone ID. You will find in your hosted zone details
+    BeanstalkELBHostedZoneId = ELB zone ID specific for each region. From this [link](https://docs.aws.amazon.com/general/latest/gr/elb.html) search the id corresponding to the region where you are deploying the application
+    Domain = ROUTE53 domain (no subdomain)
+    SubDomain = a string representing your desired subdomain. If you want an A record www.example.com, the subdomain must be www
+
+'''
+aws cloudformation create-stack --stack-name wordpress --template-body file://root.yaml --capabilities CAPABILITY_IAM --parameters ParameterKey=S3CFNAME,ParameterValue=<name of the bucket> ParameterKey=SSLCertificateArns,ParameterValue=<certificate arn> ParameterKey=HostedZoneId,ParameterValue=<hosted zone id> ParameterKey=BeanstalkELBHostedZoneId,ParameterValue=<elb zone id> ParameterKey=Domain,ParameterValue=<route53 domain> ParameterKey=SubDomain,ParameterValue=<subdomain string>
+'''

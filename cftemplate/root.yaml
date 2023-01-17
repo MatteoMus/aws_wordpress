@@ -1,9 +1,8 @@
 Parameters:
 
-####################NESTED STACK CF########################
-  NetTier3AZ2STACKFILE:
+####################S3 NESTED STACK########################
+  S3CFNAME:
     Type: String
-    Default: https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/net-3tier-2az.yaml
     
 ####################NetTier3AZ2#####################
   CidrBlock28:
@@ -110,7 +109,10 @@ Resources:
   NetTier3AZ2STACK:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/net-3tier-2az.yaml
+      #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/net-3tier-2az.yaml
+      TemplateURL: !Sub 
+        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/net-3tier-2az.yaml
+        - bucket_name: !Ref S3CFNAME
       Parameters:
         CidrBlock28: !Ref CidrBlock28
 
@@ -119,7 +121,10 @@ Resources:
     Condition: HTTPSDisabled
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/beanstalk.yaml
+      #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/beanstalk.yaml
+      TemplateURL: !Sub 
+        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/beanstalk.yaml
+        - bucket_name: !Ref S3CFNAME
       Parameters:
         PlatformType: !Ref PlatformType
         VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID  
@@ -134,7 +139,10 @@ Resources:
     Condition: HTTPSEnabled
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/beanstalk_https.yaml
+      #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/beanstalk_https.yaml
+      TemplateURL: !Sub 
+        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/beanstalk_https.yaml
+        - bucket_name: !Ref S3CFNAME
       Parameters:
         PlatformType: !Ref PlatformType
         VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID  
@@ -149,7 +157,10 @@ Resources:
   RDSSTACK:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/rds-aurora-serverless.yaml
+      #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/rds-aurora-serverless.yaml
+      TemplateURL: !Sub 
+        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/rds-aurora-serverless.yaml
+        - bucket_name: !Ref S3CFNAME
       Parameters:
         VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID
         RDSSubnets: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPrivateRDS
@@ -158,7 +169,10 @@ Resources:
   EFSSTACK:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/efs.yaml
+      #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/efs.yaml
+      TemplateURL: !Sub 
+        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/efs.yaml
+        - bucket_name: !Ref S3CFNAME
       Parameters:
         VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID 
         SubnetsEC2: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPrivateEC2 
@@ -168,7 +182,10 @@ Resources:
     Condition: HTTPSDisabled
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/route53.yaml
+      #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/route53.yaml
+      TemplateURL: !Sub 
+        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/route53.yaml
+        - bucket_name: !Ref S3CFNAME
       Parameters:
         BeanstalkELB: !GetAtt BeanstalkHTTPSTACK.Outputs.BeanstalkELB
         HostedZoneId: !Ref HostedZoneId
@@ -181,7 +198,10 @@ Resources:
     Condition: HTTPSEnabled
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/route53.yaml
+      #TemplateURL: !Sub https://worpress-matteo-mus.s3.eu-central-1.amazonaws.com/route53.yaml
+      TemplateURL: !Sub 
+        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/route53.yaml
+        - bucket_name: !Ref S3CFNAME
       Parameters:
         BeanstalkELB: !GetAtt BeanstalkHTTPSSTACK.Outputs.BeanstalkELB
         HostedZoneId: !Ref HostedZoneId
