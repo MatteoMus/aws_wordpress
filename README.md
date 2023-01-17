@@ -25,7 +25,7 @@ Both DB and instances are deployed into private subnets. The DB password is auto
 
 ### 3.2 - Fast
 
-The ALB let the application scales horizontally and you can choose the EC2s' size that better fit your needs. The DB is a mysql Amazon Aurora Serverless for better performance than a classic mysql.
+The ALB let the application scales horizontally and you can choose the EC2s' size that better fit your needs. The DB is a mysql Amazon Aurora Serverless for better performance than a classic mysql. It's use Secret Manager to store the password because secure and faster then IAM.
 
 ### 3.3 - Fault tolerant
 
