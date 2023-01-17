@@ -17,7 +17,7 @@ See section HOW TO DEPLOY APP for more details.
 
 The application is deployed on a 3 Tiers and 2 AZs infrastructure. The DB, EC2 (with the webserver) and EFS belong on private subnets. In the public subnets reside the ALB and NAT GATEAYs. An external S3 bucket is used by Beanstalk to retrieve app informations for the deploy. Secret manager is used to store the DB password If you have a domain in Route53 with a hosted zone, you could put in front of your ALB the DNS resolver. The DB is external to Beanstlk container, this way you can choose Aurora as engine and you can destroy and rebuilt the Beanstalk container without lose your data.
 
-[Architectur design]( aws_wordpress/aws_wordpress_arch.png )
+![Architectur design]( aws_wordpress/aws_wordpress_arch.png )
 
 ## 3 - Features
 
