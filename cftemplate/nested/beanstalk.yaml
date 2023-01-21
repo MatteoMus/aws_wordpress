@@ -38,7 +38,16 @@ Parameters:
   SSLCertificateArns:
     Type: String
     Default: ""  
-   
+
+################################################################
+#                        CONDITIONS                            #
+################################################################
+Conditions:
+  
+  HTTPSEnabled: !Not [!Equals [!Ref SSLCertificateArns, '']]
+  HTTPSDisabled: !Equals [!Ref SSLCertificateArns, '']
+
+
 ################################################################
 #                        RESOURCES                             #
 ################################################################
@@ -51,7 +60,8 @@ Resources:
       Description: Web app
 
 #######################CONFIGURATION TEMPLATE#######################################  
-  ConfigurationTemplate:
+  ConfigurationTemplateHTTP:
+    Condition: HTTPSDisabled
     Type: AWS::ElasticBeanstalk::ConfigurationTemplate
     Properties:
       ApplicationName: !Ref Application
@@ -96,11 +106,7 @@ Resources:
       - Namespace: aws:autoscaling:launchconfiguration
         OptionName: IamInstanceProfile
         Value: !Ref InstanceProfile
-
-      - Namespace: aws:autoscaling:launchconfiguration
-        OptionName: SecurityGroups
-        Value: !Ref InstanceSecurityGroups
-        
+       
       - Namespace: aws:elasticbeanstalk:application:environment
         OptionName: SecretRDSARN
         Value: !Ref SecretRDSARN
@@ -119,14 +125,84 @@ Resources:
         
       SolutionStackName: !Ref PlatformType
 
+  ConfigurationTemplateHTTPS:
+    Condition: HTTPSEnabled
+    Type: AWS::ElasticBeanstalk::ConfigurationTemplate
+    Properties:
+      ApplicationName: !Ref Application
+      Description: Environmnet Configuration Template
+      OptionSettings:
+      - Namespace: aws:ec2:vpc
+        OptionName: VPCId
+        Value: !Ref VPCID
+        
+      - Namespace: aws:ec2:vpc
+        OptionName: Subnets
+        Value: !Ref InstanceSubnets
+        
+      - Namespace: aws:ec2:vpc
+        OptionName: ELBSubnets
+        Value: !Ref ELBSubnets
+        
+      - Namespace: aws:ec2:vpc
+        OptionName: ELBScheme
+        Value: public
+
+      - Namespace: aws:ec2:instances
+        OptionName: InstanceTypes
+        Value: !Ref InstanceTypes
+        
+      - Namespace: aws:autoscaling:asg
+        OptionName: MinSize
+        Value: !Ref AutoscalingGroupMin
+        
+      - Namespace: aws:autoscaling:asg
+        OptionName: MaxSize
+        Value: !Ref AutoscalingGroupMax
+        
+      - Namespace: aws:elasticbeanstalk:environment
+        OptionName: EnvironmentType
+        Value: LoadBalanced
+        
+      - Namespace: aws:elasticbeanstalk:environment
+        OptionName: LoadBalancerType
+        Value: application  
+        
+      - Namespace: aws:autoscaling:launchconfiguration
+        OptionName: IamInstanceProfile
+        Value: !Ref InstanceProfile
+       
+      - Namespace: aws:elasticbeanstalk:application:environment
+        OptionName: SecretRDSARN
+        Value: !Ref SecretRDSARN
+
+      - Namespace: aws:elasticbeanstalk:application:environment
+        OptionName: FileSystem
+        Value: !Ref FileSystem
+
+      - Namespace: aws:elasticbeanstalk:application:environment
+        OptionName: Region
+        Value: !Ref "AWS::Region"    
+
+      - Namespace: aws:elbv2:listener:443
+        OptionName: Protocol
+        Value: HTTPS  
+ 
+      - Namespace: aws:elbv2:listener:443
+        OptionName: SSLCertificateArns
+        Value: !Ref SSLCertificateArns
+        
+      SolutionStackName: !Ref PlatformType      
+
 ##########################ENVIRONMENT############################  
   Environment:
     Type: AWS::ElasticBeanstalk::Environment
     Properties:
       ApplicationName: !Ref Application
       Description: Environment
-      TemplateName: !Ref ConfigurationTemplate
-      #SolutionStackName: !Ref PlatformType
+      #TemplateName: !Ref ConfigurationTemplate
+      TemplateName: !If [HTTPSEnabled, !Ref ConfigurationTemplateHTTPS, !Ref ConfigurationTemplateHTTP]
+      
 
 ####################IAM ROLES############################  
   InstanceRole:
@@ -146,14 +222,6 @@ Resources:
         - arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier
         - arn:aws:iam::aws:policy/CloudWatchAgentAdminPolicy
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-      Policies:
-        - PolicyName: AccessSecretRDSTEST
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: 'secretsmanager:GetSecretValue'
-                Resource: !Ref SecretRDSARN 
   
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile

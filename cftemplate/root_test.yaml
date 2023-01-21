@@ -120,53 +120,16 @@ Resources:
       TemplateURL: !Sub 
         - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/${file}
         - bucket_name: !Ref S3CFNAME
-          file: !If [HTTPSDisabled, beanstalk.yaml, beanstalk_https.yaml]
+          #file: !If [HTTPSDisabled, beanstalk.yaml, beanstalk_https.yaml]
+          file: beanstalk.yaml
       Parameters:
         PlatformType: !Ref PlatformType
         VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID  
         InstanceSubnets: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPrivateEC2
         ELBSubnets: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPublic
-        InstanceSecurityGroups: !Join [ ',', [ !GetAtt RDSSTACK.Outputs.EC2RDSSecurityGroup, !GetAtt EFSSTACK.Outputs.EC2EFSSecurityGroup ] ]
-        SecretRDSARN: !GetAtt RDSSTACK.Outputs.AuroraMasterSecret
-        FileSystem: !GetAtt EFSSTACK.Outputs.FileSystem
-        SSLCertificateArns: !Ref SSLCertificateArns
-   
-
-###################RDS############################
-  RDSSTACK:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 
-        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/rds-aurora-serverless.yaml
-        - bucket_name: !Ref S3CFNAME
-      Parameters:
-        VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID
-        RDSSubnets: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPrivateRDS
-        
-###################EFS############################
-  EFSSTACK:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 
-        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/efs.yaml
-        - bucket_name: !Ref S3CFNAME
-      Parameters:
-        VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID 
-        SubnetsEC2: !GetAtt NetTier3AZ2STACK.Outputs.SubnetsPrivateEC2 
-
-####################ROUTE53#########################
-  ROUTE53STACK:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 
-        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/route53.yaml
-        - bucket_name: !Ref S3CFNAME
-      Parameters:
-        BeanstalkELB: !GetAtt BeanstalkSTACK.Outputs.BeanstalkELB
-        HostedZoneId: !Ref HostedZoneId
-        BeanstalkELBHostedZoneId: !Ref BeanstalkELBHostedZoneId
-        Domain: !Ref Domain
-        SubDomain: !Ref SubDomain    
-        EvaluateTargetHealth: !Ref EvaluateTargetHealth             
+        InstanceSecurityGroups: ""
+        SecretRDSARN: ""
+        FileSystem: ""
+        SSLCertificateArns: !Ref SSLCertificateArns            
         
         
