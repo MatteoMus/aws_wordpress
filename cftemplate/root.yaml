@@ -90,14 +90,6 @@ Parameters:
     Default: false
 
 ################################################################
-#                        CONDITIONS                            #
-################################################################
-Conditions:
-  
-  HTTPSEnabled: !Not [!Equals [!Ref SSLCertificateArns, '']]
-  HTTPSDisabled: !Equals [!Ref SSLCertificateArns, '']
-
-################################################################
 #                        RESOURCES                             #
 ################################################################
 Resources:
@@ -114,13 +106,11 @@ Resources:
 
 ####################BEANSTALK###################
   BeanstalkSTACK:
-    #Condition: HTTPSDisabled
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 
-        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/${file}
+        - https://${bucket_name}.s3.${AWS::Region}.amazonaws.com/beanstalk.yaml
         - bucket_name: !Ref S3CFNAME
-          file: !If [HTTPSDisabled, beanstalk.yaml, beanstalk_https.yaml]
       Parameters:
         PlatformType: !Ref PlatformType
         VPCID: !GetAtt NetTier3AZ2STACK.Outputs.VPCID  
